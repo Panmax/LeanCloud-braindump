@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from flask import abort
+
 from leancloud import Query, LeanCloudError
 from leancloud import user
 from ..models import Note, Notebook
@@ -7,9 +9,25 @@ __author__ = 'pan'
 
 
 class NoteModel(object):
-    def __init__(self, note_id):
+    def __init__(self, note_id=None):
         self.note_id = note_id
         self.query = Query(Note)
+
+    def get_or_404(self, note_id=None):
+        if note_id:
+            self.note_id = note_id
+        try:
+            note = self.query.get(self.note_id)
+        except LeanCloudError as e:
+            print e.message
+            abort(404)
+        else:
+            return note
+
+    @classmethod
+    def set_favorite(cls, note, favorite):
+        note.set('is_favorite', favorite)
+        note.save()
 
     @classmethod
     def add(cls, title, body, body_html, notebook_id, author):

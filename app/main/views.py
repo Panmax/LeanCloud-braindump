@@ -62,6 +62,12 @@ def delete(id):
     pass
 
 
+@main.route('/tag/<name>')
+@login_required
+def tag(name):
+    pass
+
+
 @main.route('/notebooks', methods=['GET', 'POST'])
 @login_required
 def notebooks():
@@ -83,4 +89,14 @@ def share(id):
 @main.route('/favorite/<id>', methods=['GET', 'POST'])
 @login_required
 def favorite(id):
-    pass
+    note = NoteModel(id).get_or_404()
+    if current_user != note.author:
+        abort(403)
+    else:
+        if not note.is_favorite:
+            NoteModel.set_favorite(note, True)
+            flash('Note marked as favorite')
+        else:
+            NoteModel.set_favorite(note, False)
+            flash('Note removed as favorite')
+        return redirect(url_for('.index'))

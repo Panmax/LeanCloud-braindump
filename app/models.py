@@ -36,12 +36,22 @@ login_manager.anonymous_user = AnonymousUser
 
 class Note(LObject):
     @property
+    def notebook_id(self):
+        return self.get('notebook').id
+
+    @property
     def title(self):
         return self.get('title')
 
     @property
-    def notebook_id(self):
-        return self.get('notebook').id
+    def author(self):
+        a = self.get('author')
+        a.fetch()
+        return a
+
+    @property
+    def is_favorite(self):
+        return self.get('is_favorite')
 
     @property
     def updated_date(self):
