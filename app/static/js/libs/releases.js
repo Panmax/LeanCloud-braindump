@@ -2,7 +2,7 @@
 (function() {
   var getBugs, getBugsUrl, getReleaseUrl, getReleases;
 
-  window.repo = 'https://github.com/levlaz/braindump';
+  window.repo = 'https://github.com/Panmax/LeanCloud-braindump';
 
   marked.setOptions({
     renderer: new marked.Renderer(),
