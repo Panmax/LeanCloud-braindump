@@ -1,6 +1,6 @@
 leancloud-sdk
 flask
-Flask-Login==0.3.2
+Flask-Login==0.2.11
 Flask-WTF
 Flask-Bootstrap
 Flask-Moment
