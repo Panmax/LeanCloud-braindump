@@ -11,7 +11,7 @@ __author__ = 'pan'
 
 @main.route('/', methods=['GET', 'POST'])
 def index():
-    if current_user.is_authenticated:
+    if current_user.is_authenticated():
         notes = NoteModel.get_user_notes(current_user.id)
         return render_template('app/app.html', notes=notes)
     else:
