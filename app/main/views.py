@@ -36,6 +36,7 @@ def add():
         if not len(form.tags.data) == 0:
             for tag in form.tags.data.split(','):
                 tags.append(tag.replace(' ', ''))
+            note.str_tags = (tags)
         return redirect(url_for('.index'))
     return render_template('app/add.html', form=form)
 
