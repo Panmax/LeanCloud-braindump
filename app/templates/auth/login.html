@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+
+{% block title %}Braindump - Login{% endblock %}
+
+{% block page_content %}
+<div class="page-header">
+  <h1>Login</h1>
+</div>
+
+<h4> Just want to see what braindump looks like? Log in with test@example.com/demo </h4>
+
+<div class="col-md-4">
+  {{ wtf.quick_form(form) }}
+
+<br />
+<p>Forgot your password? <a href="{{ url_for('auth.password_reset_request') }}">Click here to reset it</a>.</p>
+<p> New User? <a href="{{ url_for('auth.register') }}"> Click here to register.</a></p>
+
+</div>
+
+{% endblock %}
+
+{% include 'footer.html' %}
