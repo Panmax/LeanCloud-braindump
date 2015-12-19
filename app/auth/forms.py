@@ -3,10 +3,8 @@
 from flask.ext.wtf import Form
 from wtforms import StringField, PasswordField, BooleanField, SubmitField, ValidationError
 from wtforms.validators import DataRequired, Length, Email, Regexp, EqualTo
-from leancloud import Query
 
-from ..controllers.user import UserModel
-
+from ..models import _User as User
 
 class LoginForm(Form):
     email = StringField(
@@ -30,9 +28,9 @@ class RegistrationForm(Form):
     submit = SubmitField('Register')
 
     def validate_email(self, field):
-        if UserModel.check_email_exist(field.data.lower()):
+        if User.check_email_exist(field.data.lower()):
             raise ValidationError('Email alread registered.')
 
     def validate_username(self, field):
-        if UserModel.check_username_exist(field.data):
+        if User.check_username_exist(field.data):
             raise ValidationError('Username already in user')

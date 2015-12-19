@@ -4,21 +4,20 @@ from flask.ext.login import current_user, login_required
 
 from . import main
 from .forms import NoteForm, ShareForm, NotebookForm
-from ..controllers.user import UserModel
-from ..controllers.note import NoteModel, NotebookModel, TagModel
+from ..models import _User as User, Note, Tag, Notebook
 __author__ = 'pan'
 
 
 @main.route('/', methods=['GET', 'POST'])
 def index():
     if current_user.is_authenticated():
-        notes = NoteModel.get_user_notes(current_user.id)
+        notes = Note.get_user_notes(current_user.id)
         return render_template('app/app.html', notes=notes)
     else:
         stats = []
-        users = UserModel.get_all_count()
+        users = User.get_all_count()
         stats.append(users)
-        notes = NoteModel.get_all_count()
+        notes = Note.get_all_count()
         stats.append(notes)
         return render_template('index.html', stats=stats)
 
@@ -27,9 +26,9 @@ def index():
 @login_required
 def add():
     form = NoteForm()
-    form.notebook.choices = [(n.id, n.title) for n in NotebookModel.get_user_notebooks(current_user.id)]
+    form.notebook.choices = [(n.id, n.title) for n in Notebook.get_user_notebooks(current_user.id)]
     if form.validate_on_submit():
-        note = NoteModel.add(title=form.title.data, body=form.body.data,
+        note = Note.new(title=form.title.data, body=form.body.data,
                              body_html=form.body_html.data, notebook_id=form.notebook.data,
                              author=current_user._get_current_object())
         tags = []
@@ -58,7 +57,7 @@ def settings():
 @login_required
 def trash():
     if current_user.is_authenticated():
-        notes = NoteModel.get_user_notes(current_user.id, is_deleted=True)
+        notes = Note.get_user_notes(current_user.id, is_deleted=True)
         if not notes:
             flash("Trash is empty, you are so Tidy!")
             return redirect(url_for('.index'))
@@ -70,7 +69,7 @@ def trash():
 @main.route('/note/<id>')
 @login_required
 def note(id):
-    note = NoteModel(id).get_or_404()
+    note = Note.get_or_404(id)
     if current_user != note.author:
         abort(403)
     return render_template('app/note.html', notes=[note])
@@ -79,13 +78,13 @@ def note(id):
 @main.route('/edit/<id>', methods=['GET', 'POST'])
 @login_required
 def edit(id):
-    note = NoteModel(id).get_or_404()
+    note = Note.get_or_404(id)
     if current_user != note.author:
         abort(403)
     form = NoteForm(notebook=note.notebook_id)
-    form.notebook.choices = [(n.id, n.title) for n in NotebookModel.get_user_notebooks(current_user.id)]
+    form.notebook.choices = [(n.id, n.title) for n in Notebook.get_user_notebooks(current_user.id)]
     if form.validate_on_submit():
-        NoteModel(note.id).update(title=form.title.data, body=form.body.data,
+        note.update(title=form.title.data, body=form.body.data,
                             body_html=form.body_html.data, notebook_id=form.notebook.data)
         tags = []
         if not len(form.tags.data) == 0:
@@ -103,11 +102,11 @@ def edit(id):
 @main.route('/delete/<id>', methods=['GET', 'POST'])
 @login_required
 def delete(id):
-    note = NoteModel(id).get_or_404()
+    note = Note.get_or_404(id)
     if current_user != note.author:
         abort(403)
     else:
-        NoteModel(id).delete()
+        note.delete()
         flash('The note has been deleted.')
         return redirect(url_for('.index'))
 
@@ -115,7 +114,7 @@ def delete(id):
 @main.route('/tag/<name>')
 @login_required
 def tag(name):
-    tag = TagModel.get_by_name(name)
+    tag = Tag.get_by_name(name)
     notes = tag._get_notes()
     return render_template('app/tag.html', notes=notes, tag=name)
 
@@ -125,17 +124,17 @@ def tag(name):
 def notebooks():
     form = NotebookForm()
     if form.validate_on_submit():
-        if not NotebookModel.add(form.title.data, current_user.id):
+        if not Notebook.add(form.title.data, current_user.id):
             flash('A notebook with name {0} already exists.'.format(form.title.data))
         return redirect(url_for('.notebooks'))
-    notebooks = NotebookModel.get_user_notebooks(current_user.id)
+    notebooks = Notebook.get_user_notebooks(current_user.id)
     return render_template('app/notebooks.html', notebooks=notebooks, form=form)
 
 
 @main.route('/notebook/<id>')
 @login_required
 def notebook(id):
-    notebook = NotebookModel(id).get_or_404()
+    notebook = Notebook.get_or_404(id)
     if current_user != notebook.author:
         abort(403)
     return render_template('app/notebook.html', notebook=notebook, notes=notebook._show_notes())
@@ -144,7 +143,7 @@ def notebook(id):
 @main.route('/share/<id>', methods=['GET', 'POST'])
 @login_required
 def share(id):
-    note = NoteModel(id).get_or_404()
+    note = Note.get_or_404(id)
     if current_user != note.author:
         abort(403)
     form = ShareForm()
@@ -156,15 +155,15 @@ def share(id):
 @main.route('/favorite/<id>', methods=['GET', 'POST'])
 @login_required
 def favorite(id):
-    note = NoteModel(id).get_or_404()
+    note = Note.get_or_404(id)
     if current_user != note.author:
         abort(403)
     else:
         if not note.is_favorite:
-            NoteModel.set_favorite(note, True)
+            note.set_favorite(True)
             flash('Note marked as favorite')
         else:
-            NoteModel.set_favorite(note, False)
+            note.set_favorite(False)
             flash('Note removed as favorite')
         return redirect(url_for('.index'))
 
@@ -172,5 +171,5 @@ def favorite(id):
 @main.route('/favorites', methods=['GET'])
 @login_required
 def favorites():
-    notes = NoteModel.get_user_favorite_notes(current_user.id)
+    notes = Note.get_user_favorite_notes(current_user.id)
     return render_template('app/app.html', notes=notes)

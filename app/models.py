@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
-from leancloud import Query
-from leancloud import Object as LObject
-from leancloud import Relation
-
+from flask import abort
 from flask.ext.login import UserMixin, current_user, AnonymousUserMixin
+
+from leancloud import Query
+from leancloud import Object as LObject, user
+from leancloud import Relation
+from leancloud import LeanCloudError
 
 from . import login_manager
 
@@ -21,6 +23,41 @@ class _User(UserMixin, LObject):
     @property
     def email(self):
         return self.get('email')
+
+
+    @classmethod
+    def check_email_exist(cls, email):
+        if Query(cls).equal_to('email', email).find():
+            return True
+        return False
+
+    @classmethod
+    def check_username_exist(cls, username):
+        if Query(cls).equal_to('username', username).find():
+            return True
+        return False
+
+    @classmethod
+    def register(cls, email, username, password):
+        u = user.User(username=username, password=password, email=email)
+        u.sign_up()
+        return Query(cls).equal_to('username', username).first()
+
+    @classmethod
+    def login_with_email(cls, email, password):
+        try:
+            username = Query(cls).equal_to('email', email).first().get('username')
+            u = user.User(username=username, password=password)
+            u.login()
+        except LeanCloudError as e:
+            print e.message
+            return None
+        else:
+            return Query(cls).equal_to('username', username).first()
+
+    @classmethod
+    def get_all_count(cls):
+        return Query(cls).count()
 
 
 class AnonymousUser(AnonymousUserMixin):
@@ -77,6 +114,21 @@ class Note(LObject):
         notebook = Query(Notebook).get(id)
         return notebook
 
+    def update(self, title, body, body_html, notebook_id):
+        self.set('title', title)
+        self.set('body', body)
+        self.set('body_html', body_html)
+        self.set('notebook_id', notebook_id)
+        self.save()
+
+    def delete(self):
+        self.set('is_deleted', True)
+        self.save()
+
+    def set_favorite(self, favorite):
+        self.set('is_favorite', favorite)
+        self.save()
+
     def _find_or_create_tag(self, tag):
         t = Query(Tag).equal_to('tag', tag).limit(1).find()
         if not t:
@@ -103,6 +155,43 @@ class Note(LObject):
     str_tags = property(_get_tags,
                         _set_tags)
 
+    @classmethod
+    def get_or_404(cls, note_id):
+        try:
+            note = Query(cls).get(note_id)
+        except LeanCloudError as e:
+            print e.message
+            abort(404)
+        else:
+            return note
+
+    @classmethod
+    def get_user_notes(cls, user_id, is_deleted=False):
+        notes = Query(cls).equal_to('author', user.User.create_without_data(user_id)).\
+            equal_to('is_deleted', is_deleted).descending('is_favorite').descending('updatedAt').find()
+        return notes
+
+    @classmethod
+    def get_user_favorite_notes(cls, user_id):
+        notes = Query(cls).equal_to('author', user.User.create_without_data(user_id)).equal_to('is_deleted', False)\
+            .equal_to('is_favorite', True).descending('updatedAt').find()
+        return notes
+
+    @classmethod
+    def new(cls, title, body, body_html, notebook_id, author):
+        note = cls()
+        note.set('title', title)
+        note.set('body', body)
+        note.set('body_html', body_html)
+        note.set('notebook', Notebook.create_without_data(notebook_id))
+        note.set('author', author)
+        note.save()
+        return note
+
+    @classmethod
+    def get_all_count(cls):
+        return Query(cls).count()
+
 
 class Notebook(LObject):
     @property
@@ -126,6 +215,38 @@ class Notebook(LObject):
                 notes.append(note)
         return notes
 
+    @classmethod
+    def get_or_404(cls, notebook_id):
+        try:
+            notebook = Query(cls).get(notebook_id)
+        except LeanCloudError, e:
+            print e.message
+            abort(404)
+        else:
+            return notebook
+
+    @classmethod
+    def get_user_notebooks(cls, user_id):
+        notebooks = Query(Notebook).equal_to('author', user.User.create_without_data(user_id)).find()
+        return notebooks
+
+    @classmethod
+    def add(cls, title, user_id):
+        if Query(Notebook).equal_to('author', user.User.create_without_data(user_id)).equal_to('title', title).find():
+            return False
+        notebook = Notebook()
+        notebook.set('title', title)
+        notebook.set('author', user.User.create_without_data(user_id))
+        notebook.save()
+        return True
+
+    @classmethod
+    def create_default_notebook(cls, user_id):
+        notebook = Notebook()
+        notebook.set('title', 'Default')
+        notebook.set('author', user.User.create_without_data(user_id))
+        notebook.save()
+
 
 class Tag(LObject):
     @property
@@ -141,3 +262,8 @@ class Tag(LObject):
             if author == current_user:
                 notes.append(note)
         return notes
+
+    @classmethod
+    def get_by_name(cls, name):
+        tag = Query(Tag).equal_to('tag', name).first()
+        return tag

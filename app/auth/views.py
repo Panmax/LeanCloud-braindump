@@ -4,15 +4,14 @@ from flask.ext.login import login_user, logout_user, login_required, current_use
 
 from . import auth
 from .forms import RegistrationForm, LoginForm
-from ..controllers.user import UserModel
-from ..controllers.note import NotebookModel
+from ..models import _User as User, Notebook
 
 
 @auth.route('/login', methods=['GET', 'POST'])
 def login():
     form = LoginForm()
     if form.validate_on_submit():
-        user = UserModel.login_with_email(email=form.email.data.lower().strip(), password=form.password.data)
+        user = User.login_with_email(email=form.email.data.lower().strip(), password=form.password.data)
         if user is not None:
             login_user(user, form.remember_me.data)
             return redirect(request.args.get('next') or url_for('main.index'))
@@ -24,8 +23,8 @@ def login():
 def register():
     form = RegistrationForm()
     if form.validate_on_submit():
-        user = UserModel.register(form.email.data.lower(), form.username.data, form.password.data)
-        NotebookModel.create_default_notebook(user.id)
+        user = User.register(form.email.data.lower(), form.username.data, form.password.data)
+        Notebook.create_default_notebook(user.id)
         return redirect(url_for('main.index'))
     return render_template('auth/register.html', form=form)
 
