@@ -12,7 +12,7 @@ from ..controllers.note import NotebookModel
 def login():
     form = LoginForm()
     if form.validate_on_submit():
-        user = UserModel.login_with_email(email=form.email.data.lower(), password=form.password.data)
+        user = UserModel.login_with_email(email=form.email.data.lower().strip(), password=form.password.data)
         if user is not None:
             login_user(user, form.remember_me.data)
             return redirect(request.args.get('next') or url_for('main.index'))

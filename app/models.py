@@ -50,8 +50,24 @@ class Note(LObject):
         return a
 
     @property
+    def body(self):
+        return self.get('body')
+
+    @property
+    def body_html(self):
+        return self.get('body_html')
+
+    @property
     def is_favorite(self):
         return self.get('is_favorite')
+
+    @property
+    def is_deleted(self):
+        return self.get('is_deleted')
+
+    @property
+    def created_date(self):
+        return self.get('createdAt')
 
     @property
     def updated_date(self):
@@ -92,6 +108,23 @@ class Notebook(LObject):
     @property
     def title(self):
         return self.get('title')
+
+    @property
+    def author(self):
+        a = self.get('author')
+        a.fetch()
+        return a
+
+    @property
+    def notes(self):
+        return Query(Note).equal_to('notebook', self).find()
+
+    def _show_notes(self):
+        notes = []
+        for note in self.notes:
+            if not note.is_deleted:
+                notes.append(note)
+        return notes
 
 
 class Tag(LObject):
