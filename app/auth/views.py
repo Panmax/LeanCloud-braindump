@@ -25,6 +25,7 @@ def register():
     if form.validate_on_submit():
         user = User.register(form.email.data.lower(), form.username.data, form.password.data)
         Notebook.create_default_notebook(user.id)
+        login_user(user)
         return redirect(url_for('main.index'))
     return render_template('auth/register.html', form=form)
 

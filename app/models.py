@@ -41,6 +41,7 @@ class _User(UserMixin, LObject):
     def register(cls, email, username, password):
         u = user.User(username=username, password=password, email=email)
         u.sign_up()
+        u.login()
         return Query(cls).equal_to('username', username).first()
 
     @classmethod
