@@ -105,11 +105,11 @@ class Note(LObject):
 
     @property
     def created_date(self):
-        return self.get('createdAt')
+        return self.created_at
 
     @property
     def updated_date(self):
-        return self.get('updatedAt')
+        return self.updated_at
 
     def get_notebook(self, id):
         notebook = Query(Notebook).get(id)
