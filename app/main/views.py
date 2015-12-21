@@ -3,7 +3,7 @@ from flask import render_template, redirect, url_for, flash, abort, current_app,
 from flask.ext.login import current_user, login_required
 
 from . import main
-from .forms import NoteForm, ShareForm, NotebookForm
+from .forms import NoteForm, ShareForm, NotebookForm, SearchForm
 from ..models import _User as User, Note, Tag, Notebook
 __author__ = 'pan'
 
@@ -38,6 +38,20 @@ def add():
             note.str_tags = (tags)
         return redirect(url_for('.index'))
     return render_template('app/add.html', form=form)
+
+
+@main.route('/search')
+@login_required
+def search():
+    form = SearchForm()
+    if request.args.get('search_field', ''):
+        query = request.args.get('search_field', '')
+        results = Note.search(current_user.id, query)
+        if not len(results):
+            flash('Hmm, we did not find any \
+            braindumps matching your search. Try again?')
+        return render_template('app/search.html', form=form, notes=results)
+    return render_template('app/search.html', form=form)
 
 
 @main.route('/news')

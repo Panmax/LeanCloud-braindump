@@ -193,6 +193,14 @@ class Note(LObject):
     def get_all_count(cls):
         return Query(cls).count()
 
+    @classmethod
+    def search(cls, user_id, keyword):
+        query_title = Query(Note).contains('title', keyword)
+        query_body = Query(Note).contains('body', keyword)
+        notes = Query.or_(query_title, query_body).equal_to('author', user.User.create_without_data(user_id))\
+            .descending('updatedAt').find()
+        return notes
+
 
 class Notebook(LObject):
     @property

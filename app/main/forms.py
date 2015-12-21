@@ -29,3 +29,8 @@ class ShareForm(Form):
 class NotebookForm(Form):
     title = StringField('Title:', validators=[DataRequired(), Length(1, 200)])
     submit = SubmitField('Submit')
+
+
+class SearchForm(Form):
+    search_field = StringField()
+    submit = SubmitField('Search')
